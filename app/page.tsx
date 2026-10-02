@@ -34,6 +34,17 @@ const CLUB = {
   titleSponsor: { name: "AEROLINE", since: 2019 },
   premium: ["VOLTA BANK", "KRONOS", "NEXA", "ORBIS"],
   official: ["MERIDIAN", "FORGE", "LUMEN", "ATLAS", "PRIMA", "ZENITH", "HALCYON", "VERTEX"],
+  // Partnership Builder: x/y = position on the pitch (%), imp = impressions per match (thousands), price = €k per season
+  matches: 38,
+  cpmBenchmark: 28, // € per 1,000 impressions, premium broadcast reference (placeholder — use real data)
+  placements: [
+    { id: "shirt", x: 36, y: 42, imp: 2400, price: 1800 },
+    { id: "led", x: 50, y: 7, imp: 1500, price: 650 },
+    { id: "tunnel", x: 20, y: 93, imp: 400, price: 220 },
+    { id: "screen", x: 93, y: 50, imp: 900, price: 380 },
+    { id: "app", x: 50, y: 50, imp: 1100, price: 450 },
+    { id: "training", x: 72, y: 72, imp: 300, price: 150 },
+  ],
   contacts: { press: "press@club.example", commercial: "partners@club.example" },
 };
 
@@ -56,7 +67,7 @@ const en = {
   away: "Riverside United",
   at: "at",
   units: ["days", "hrs", "min", "sec"],
-  ticketsFrom: "Tickets from £25",
+  ticketsFrom: "Tickets from €25",
   seasonNote: "Or get a season ticket and save up to 30%",
   manifesto: "We don’t sell emotion. We hand it out, one ticket at a time.",
   values: [
@@ -72,6 +83,30 @@ const en = {
   officialLabel: "Official partners",
   joinTitle: "Put your brand in front of millions of fans",
   reach: [["1.2M", "social media followers"], ["38,200", "fans in the stadium"], ["8.4M", "monthly video views"], ["62%", "audience aged 18–34"]],
+  builderTitle: "Build your partnership",
+  builderLead: "Tap the pitch to pick placements. Reach, price and cost per thousand impressions update in real time.",
+  placements: [
+    ["Shirt front", "Your logo on the match kit — in every broadcast, replay and fan photo."],
+    ["LED perimeter boards", "Dynamic boards along the touchline, switchable by market and campaign."],
+    ["Tunnel & mixed zone", "The backdrop of every player interview and pre-match walk-out."],
+    ["Big-screen takeover", "Replays, goal celebrations and half-time content on the stadium screens."],
+    ["Club app & stream overlay", "Sponsored match centre, live polls and overlays in the app and the club stream."],
+    ["Training kit & academy", "Visibility in daily training content and across the youth academy."],
+  ],
+  perMatch: "impressions per match",
+  perSeason: "per season",
+  placementsLabel: "Placements",
+  seasonImpr: "Season impressions",
+  mUnit: "M",
+  invest: "Investment",
+  bundle: "Bundle discount",
+  cpmLabel: "Cost per 1,000 impressions",
+  benchmark: "Premium broadcast benchmark",
+  lowerBy: "lower than the benchmark",
+  emptyPkg: "Select at least one placement on the pitch.",
+  requestPkg: "Request this package",
+  yourPkg: "Your package",
+  disclaimer: "Illustrative figures. Replace with your club’s audited media data.",
   sent: "Request sent. Our commercial team will reply within 24 hours.",
   fCompany: "Company", fCompanyPh: "Brand name",
   fEmail: "Work email",
@@ -129,6 +164,30 @@ const it: typeof en = {
   officialLabel: "Partner ufficiali",
   joinTitle: "Porta il tuo brand davanti a milioni di tifosi",
   reach: [["1,2 Mln", "follower sui social"], ["38.200", "tifosi allo stadio"], ["8,4 Mln", "visualizzazioni video al mese"], ["62%", "pubblico tra 18 e 34 anni"]],
+  builderTitle: "Costruisci la tua partnership",
+  builderLead: "Tocca il campo per scegliere le visibilità. Reach, prezzo e costo per mille impression si aggiornano in tempo reale.",
+  placements: [
+    ["Fronte maglia", "Il tuo logo sulla maglia da gara: in ogni diretta, replay e foto dei tifosi."],
+    ["Cartelloni LED a bordo campo", "Pannelli dinamici lungo la linea laterale, modulabili per mercato e campagna."],
+    ["Tunnel e mixed zone", "Lo sfondo di ogni intervista e dell’ingresso in campo."],
+    ["Takeover dei maxischermi", "Replay, esultanze e contenuti dell’intervallo sugli schermi dello stadio."],
+    ["App del club e overlay streaming", "Match center brandizzato, sondaggi live e overlay su app e streaming del club."],
+    ["Divisa d’allenamento e settore giovanile", "Visibilità nei contenuti quotidiani e in tutta l’academy."],
+  ],
+  perMatch: "impression a partita",
+  perSeason: "a stagione",
+  placementsLabel: "Visibilità",
+  seasonImpr: "Impression a stagione",
+  mUnit: " Mln",
+  invest: "Investimento",
+  bundle: "Sconto pacchetto",
+  cpmLabel: "Costo per 1.000 impression",
+  benchmark: "Benchmark broadcast premium",
+  lowerBy: "in meno rispetto al benchmark",
+  emptyPkg: "Seleziona almeno una visibilità sul campo.",
+  requestPkg: "Richiedi questo pacchetto",
+  yourPkg: "Il tuo pacchetto",
+  disclaimer: "Dati illustrativi. Sostituiscili con i dati media certificati del tuo club.",
   sent: "Richiesta inviata. Il nostro ufficio commerciale ti risponderà entro 24 ore.",
   fCompany: "Azienda", fCompanyPh: "Nome del brand",
   fEmail: "Email aziendale",
@@ -257,6 +316,24 @@ export default function Page() {
   const [sent, setSent] = useState(false);
   const cd = useCountdown(CLUB.matchDate);
   const t = COPY[lang];
+  const [picked, setPicked] = useState<string[]>(["shirt", "led"]);
+  const [active, setActive] = useState("shirt");
+  const toggle = (id: string) => {
+    setActive(id);
+    setPicked((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+  };
+  const idx = (id: string) => CLUB.placements.findIndex((x) => x.id === id);
+  const sel = CLUB.placements.filter((x) => picked.includes(x.id));
+  const disc = sel.length >= 5 ? 0.15 : sel.length >= 3 ? 0.08 : 0;
+  const cost = sel.reduce((a, x) => a + x.price, 0) * 1000 * (1 - disc);
+  const impr = sel.reduce((a, x) => a + x.imp, 0) * CLUB.matches * 1000;
+  const cpm = impr ? cost / (impr / 1000) : 0;
+  const saving = cpm ? Math.round((1 - cpm / CLUB.cpmBenchmark) * 100) : 0;
+  const nf = new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 });
+  const eur = new Intl.NumberFormat(t.locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const eur1 = new Intl.NumberFormat(t.locale, { style: "currency", currency: "EUR", maximumFractionDigits: 1 });
+  const act = CLUB.placements[idx(active)];
+  const actCopy = t.placements[idx(active)];
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -436,8 +513,84 @@ export default function Page() {
               </div>
             ))}
 
+            {/* Partnership builder */}
+            <div className="mt-16">
+              <h3 className="text-4xl font-black uppercase leading-[0.95] sm:text-6xl" style={display}>{t.builderTitle}</h3>
+              <p className="mt-3 max-w-2xl text-black/70">{t.builderLead}</p>
+              <div className="mt-8 grid overflow-hidden bg-[var(--bg)] text-white lg:grid-cols-[1.5fr_1fr]">
+                <div className="p-4 sm:p-6">
+                  <div className="relative aspect-[3/2] w-full overflow-hidden bg-[var(--surface)]" style={bands}>
+                    <Pitch className="absolute inset-0 h-full w-full text-[var(--soft)] opacity-50" />
+                    {CLUB.placements.map((p) => {
+                      const on = picked.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => toggle(p.id)}
+                          onMouseEnter={() => setActive(p.id)}
+                          aria-pressed={on}
+                          aria-label={t.placements[idx(p.id)][0]}
+                          style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                          className="group absolute grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                        >
+                          {on && <span className="absolute h-8 w-8 animate-ping rounded-full bg-[var(--accent)]/50" />}
+                          <span className={`relative grid h-7 w-7 place-items-center rounded-full border-2 text-sm font-black transition ${on ? "border-[var(--accent)] bg-[var(--accent)] text-black" : "border-white bg-[var(--bg)] text-white group-hover:border-[var(--accent)]"} ${active === p.id ? "scale-125" : ""}`}>
+                            {on ? "✓" : "+"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mb-2 mt-5 text-sm text-white/60">{t.placementsLabel}</p>
+                  <ul className="flex flex-wrap gap-2">
+                    {CLUB.placements.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => toggle(p.id)}
+                          aria-pressed={picked.includes(p.id)}
+                          className={`min-h-11 border px-3 text-sm font-semibold transition ${picked.includes(p.id) ? "border-[var(--accent)] bg-[var(--accent)] text-black" : "border-white/25 text-white/80 hover:border-white"}`}
+                        >
+                          {t.placements[idx(p.id)][0]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="border-t border-white/10 p-5 sm:p-8 lg:border-l lg:border-t-0">
+                  <h4 className="text-3xl font-extrabold uppercase leading-none text-[var(--pop)]" style={display}>{actCopy[0]}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-white/65">{actCopy[1]}</p>
+                  <p className="mt-3 text-sm text-white/80">
+                    <span className="font-bold">{nf.format(act.imp / 1000)}{t.mUnit}</span> {t.perMatch} · <span className="font-bold">{eur.format(act.price * 1000)}</span> {t.perSeason}
+                  </p>
+                  <div className="my-6 h-px bg-white/10" />
+                  {sel.length === 0 ? (
+                    <p className="text-white/60">{t.emptyPkg}</p>
+                  ) : (
+                    <dl className="grid gap-4">
+                      <div className="flex flex-col-reverse">
+                        <dt className="text-sm text-white/55">{t.seasonImpr}</dt>
+                        <dd className="text-5xl font-black tabular-nums leading-none" style={display}>{nf.format(impr / 1e6)}{t.mUnit}</dd>
+                      </div>
+                      <div className="flex flex-col-reverse">
+                        <dt className="text-sm text-white/55">{t.invest}{disc > 0 && ` · ${t.bundle} −${Math.round(disc * 100)}%`}</dt>
+                        <dd className="text-5xl font-black tabular-nums leading-none text-[var(--gold)]" style={display}>{eur.format(cost)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-white/55">{t.cpmLabel}</dt>
+                        <dd className="mt-1 text-3xl font-black tabular-nums" style={display}>{eur1.format(cpm)}</dd>
+                        <div className="mt-2 h-2 bg-white/10"><div className="h-2 bg-[var(--accent)] transition-all duration-500" style={{ width: `${Math.min(100, (cpm / CLUB.cpmBenchmark) * 100)}%` }} /></div>
+                        <p className="mt-2 text-xs text-white/55">{t.benchmark}: {eur1.format(CLUB.cpmBenchmark)}{saving > 0 && ` · ${saving}% ${t.lowerBy}`}</p>
+                      </div>
+                    </dl>
+                  )}
+                  {sel.length > 0 && <a href="#lead" className={btnPrimary + " mt-6 w-full"}>{t.requestPkg} <Icon name="arrow" /></a>}
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-black/50">{t.disclaimer}</p>
+            </div>
+
             {/* Become a partner */}
-            <div className="mt-14 grid gap-8 border-t-2 border-[var(--violet)] pt-10 lg:grid-cols-2">
+            <div id="lead" className="mt-14 scroll-mt-20 grid gap-8 border-t-2 border-[var(--violet)] pt-10 lg:grid-cols-2">
               <div>
                 <h3 className="text-4xl font-black uppercase leading-[0.95] sm:text-6xl" style={display}>{t.joinTitle}</h3>
                 <dl className="mt-8 grid grid-cols-2 gap-6">
@@ -456,6 +609,11 @@ export default function Page() {
               ) : (
                 <div className="grid gap-3 bg-[var(--bg)] p-5 text-white sm:p-8">
                   {/* Connect to your API / Server Action: fetch('/api/lead') */}
+                  {sel.length > 0 && (
+                    <p className="border border-[var(--gold)]/40 p-3 text-sm text-white/80">
+                      <span className="font-bold text-[var(--gold)]">{t.yourPkg}:</span> {sel.map((x) => t.placements[idx(x.id)][0]).join(", ")} · {eur.format(cost)}
+                    </p>
+                  )}
                   <label className="grid gap-1 text-sm">{t.fCompany}
                     <input className="h-12 border border-white/20 bg-transparent px-3 outline-none focus:border-[var(--gold)]" placeholder={t.fCompanyPh} />
                   </label>
