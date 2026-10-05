@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FC Calcio",
+  title: "ASD United Montefredente",
   description: " A football club website built with Next.js 13 and Tailwind CSS.",
 };
 
